@@ -21,6 +21,8 @@ let postponedCount = 0;
 let idleStart: Date | null = null;
 let lockStart: Date | null = null;
 let lastTick: Date | null = null;
+let isInPomodoroSession = false;
+let currentPomodoroCount = 0;
 
 export function getBreakTime(): BreakTime {
   return breakTime;
@@ -49,6 +51,20 @@ function getIdleResetSeconds(): number {
 
 function getBreakSeconds(): number {
   const settings: Settings = getSettings();
+  
+  if (settings.timerMode === TimerMode.Pomodoro) {
+    const { pomodoroSettings } = settings;
+    if (!isInPomodoroSession) {
+      // During break
+      return currentPomodoroCount % pomodoroSettings.longBreakInterval === 0
+        ? pomodoroSettings.longBreakDuration / 1000
+        : pomodoroSettings.shortBreakDuration / 1000;
+    } else {
+      // During work session
+      return pomodoroSettings.workDuration / 1000;
+    }
+  }
+  
   return getSeconds(new Date(settings.breakFrequency));
 }
 
@@ -85,6 +101,24 @@ function createIdleNotification() {
 
 export function createBreak(isPostpone = false): void {
   const settings: Settings = getSettings();
+
+  if (settings.timerMode === TimerMode.Pomodoro) {
+    if (isInPomodoroSession) {
+      // Work session completed
+      currentPomodoroCount++;
+      isInPomodoroSession = false;
+      
+      // Update break message based on break type
+      const isLongBreak = currentPomodoroCount % settings.pomodoroSettings.longBreakInterval === 0;
+      settings.breakTitle = isLongBreak ? 'Long Break' : 'Short Break';
+      settings.breakMessage = `Pomodoro ${currentPomodoroCount} completed! Time for a ${isLongBreak ? 'long' : 'short'} break.`;
+    } else {
+      // Break completed
+      isInPomodoroSession = true;
+      settings.breakTitle = 'Pomodoro Work Session';
+      settings.breakMessage = `Break completed! Starting Pomodoro ${currentPomodoroCount + 1}`;
+    }
+  }
 
   if (idleStart) {
     createIdleNotification();
@@ -227,6 +261,14 @@ function checkBreak(): void {
 }
 
 export function startBreakNow(): void {
+  const settings = getSettings();
+  if (settings.timerMode === TimerMode.Pomodoro) {
+    // Reset Pomodoro session
+    currentPomodoroCount = 0;
+    isInPomodoroSession = true;
+    settings.breakTitle = 'Pomodoro Work Session';
+    settings.breakMessage = 'Starting Pomodoro 1';
+  }
   breakTime = moment();
 }
 
