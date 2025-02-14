@@ -1,9 +1,48 @@
 import { Button, ButtonGroup, ControlGroup, Spinner } from "@blueprintjs/core";
 import moment from "moment";
 import * as React from "react";
-import { animated, config, useSpring } from "react-spring";
+import { animated, config, useSpring } from "@react-spring/web";
+import type { ComponentProps } from "react";
+import type { AnimatedProps } from "@react-spring/web";
 import { Settings, SoundType } from "../../types/settings";
-import styles from "./Break.scss";
+import * as styles from "./Break.scss";
+
+type ExtendedAnimatedProps = AnimatedProps<ComponentProps<"div">> & {
+  children?: React.ReactNode;
+  className?: string;
+  style?: any;
+};
+
+const AnimatedDiv = animated.div as React.FC<ExtendedAnimatedProps>;
+
+interface BreakCountdownProps {
+  breakTitle: string;
+  onCountdownOver: () => void;
+  onPostponeBreak: () => void;
+  onSkipBreak: () => void;
+  postponeBreakEnabled: boolean;
+  skipBreakEnabled: boolean;
+  textColor: string;
+}
+
+interface BreakProgressProps {
+  breakMessage: string;
+  endBreakEnabled: boolean;
+  onEndBreak: () => void;
+  settings: Settings;
+  textColor: string;
+}
+
+interface SpinnerProps {
+  value: number;
+  textColor: string;
+}
+
+interface TimeRemaining {
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
 
 const COUNTDOWN_SECS = 10;
 const TICK_MS = 200;
@@ -117,7 +156,7 @@ function BreakProgress(props: BreakProgressProps) {
   }
 
   return (
-    <animated.div className={styles.breakProgress} style={fadeIn}>
+    <AnimatedDiv className={styles.breakProgress} style={fadeIn}>
       <OuterSpinner value={progress} textColor={textColor} />
       <div className={styles.progressContent}>
         <h1
@@ -136,21 +175,10 @@ function BreakProgress(props: BreakProgressProps) {
           </Button>
         )}
       </div>
-    </animated.div>
-  );
-}
+    </AnimatedDiv>
+)}
 
-interface BreakCountdownProps {
-  breakTitle: string;
-  onCountdownOver: () => void;
-  onPostponeBreak: () => void;
-  onSkipBreak: () => void;
-  postponeBreakEnabled: boolean;
-  skipBreakEnabled: boolean;
-  textColor: string;
-}
-
-function BreakCountdown(props: BreakCountdownProps) {
+const BreakCountdown: React.FC<BreakCountdownProps> = (props) => {
   const {
     breakTitle,
     onCountdownOver,
@@ -195,7 +223,7 @@ function BreakCountdown(props: BreakCountdownProps) {
   }
 
   return (
-    <animated.div className={styles.breakCountdown} style={fadeIn}>
+    <AnimatedDiv className={styles.breakCountdown} style={fadeIn}>
       <h2
         className={styles.breakTitle}
         dangerouslySetInnerHTML={{ __html: breakTitle }}
@@ -230,11 +258,11 @@ function BreakCountdown(props: BreakCountdownProps) {
           </ButtonGroup>
         </ControlGroup>
       )}
-    </animated.div>
+    </AnimatedDiv>
   );
 }
 
-export default function Break() {
+const Break: React.FC = () => {
   const [settings, setSettings] = React.useState<Settings | null>(null);
   const [countingDown, setCountingDown] = React.useState(true);
   const [allowPostpone, setAllowPostpone] = React.useState<boolean | null>(
@@ -322,7 +350,7 @@ export default function Break() {
   }
 
   return (
-    <animated.div
+    <AnimatedDiv
       className={`bp5-dark ${styles.breakContainer}`}
       style={{
         backgroundColor: settings.showBackdrop
@@ -331,7 +359,7 @@ export default function Break() {
         opacity: anim.backdropOpacity,
       }}
     >
-      <animated.div
+      <AnimatedDiv
         className={styles.break}
         style={{
           width: anim.width,
@@ -339,7 +367,7 @@ export default function Break() {
           color: settings.textColor,
         }}
       >
-        <animated.div
+        <AnimatedDiv
           className={styles.background}
           style={{
             width: anim.width,
@@ -373,7 +401,9 @@ export default function Break() {
             )}
           </>
         )}
-      </animated.div>
-    </animated.div>
+      </AnimatedDiv>
+    </AnimatedDiv>
   );
 }
+
+export default Break;
