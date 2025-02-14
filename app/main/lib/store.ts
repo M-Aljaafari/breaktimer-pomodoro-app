@@ -3,6 +3,26 @@ import { defaultSettings, Settings } from "../../types/settings";
 import { setAutoLauch } from "./auto-launch";
 import { initBreaks } from "./breaks";
 
+interface StoreSchema {
+  settings: Settings;
+  appInitialized: boolean;
+  settingsVersion: number;
+  disableEndTime: number | null;
+}
+
+const store = new Store<StoreSchema>({  
+  defaults: {
+    settings: defaultSettings,
+    appInitialized: false,
+    settingsVersion: 0,
+    disableEndTime: null,
+  },
+}) as Store<StoreSchema> & {
+  get<K extends keyof StoreSchema>(key: K): StoreSchema[K];
+  set<K extends keyof StoreSchema>(key: K, value: StoreSchema[K]): void;
+  set(obj: Partial<StoreSchema>): void;
+};
+
 interface Migration {
   version: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -55,19 +75,8 @@ const migrations: Migration[] = [
   },
 ];
 
-const store = new Store<{
-  settings: Settings;
-  appInitialized: boolean;
-  settingsVersion: number;
-  disableEndTime: number | null;
-}>({
-  defaults: {
-    settings: defaultSettings,
-    appInitialized: false,
-    settingsVersion: 0,
-    disableEndTime: null,
-  },
-});
+
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function migrateSettings(settings: any): Settings {
@@ -111,7 +120,7 @@ function migrateSettings(settings: any): Settings {
 }
 
 export function getSettings(): Settings {
-  const settings = store.get("settings");
+  const settings = store.get("settings") as Settings;
   const migratedSettings = migrateSettings(settings);
   return Object.assign({}, defaultSettings, migratedSettings) as Settings;
 }
@@ -148,5 +157,5 @@ export function setDisableEndTime(endTime: number | null): void {
 }
 
 export function getDisableEndTime(): number | null {
-  return store.get("disableEndTime");
+  return store.get("disableEndTime") as number | null;
 }
